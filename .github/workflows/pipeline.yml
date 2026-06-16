@@ -1,0 +1,120 @@
+name: SDLC Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'raw_docs/**'
+      - 'config.yaml'
+      - 'pipeline/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: 'Pipeline stages to run (comma-separated)'
+        required: false
+        default: 'classify,design,stories,trace,quality'
+      incremental:
+        description: 'Only process changed files'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Create directories
+        run: |
+          mkdir -p raw_docs markdown_docs sub_docs user_stories design_artifacts
+
+      - name: Run pipeline stages
+        env:
+          STITCH_API_KEY: ${{ secrets.STITCH_API_KEY }}
+        run: |
+          stages="${{ github.event.inputs.stages || 'classify,design,stories,trace,quality' }}"
+          incremental="${{ github.event.inputs.incremental || 'true' }}"
+          
+          if [ "$incremental" = "true" ]; then
+            sdlc-pipeline pipeline --stages "$stages" --incremental
+          else
+            sdlc-pipeline pipeline --stages "$stages" --full
+          fi
+
+      - name: Lint OpenAPI spec
+        if: hashFiles('design_artifacts/openapi.yaml') != ''
+        run: |
+          npm install -g @stoplight/spectral-cli
+          spectral lint design_artifacts/openapi.yaml || true
+
+      - name: Lint SQL schema
+        if: hashFiles('design_artifacts/schema.sql') != ''
+        run: |
+          pip install sqlfluff
+          sqlfluff lint design_artifacts/schema.sql --dialect postgres || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          name: sdlc-artifacts
+          path: |
+            markdown_docs/
+            sub_docs/
+            design_artifacts/
+            user_stories/
+          retention-days: 30
+
+      - name: Quality gate results
+        if: always()
+        run: |
+          if [ -f "quality_gates.json" ]; then
+            echo "### Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+            cat quality_gates.json | python -c "
+              import json, sys
+              data = json.load(sys.stdin)
+              for r in data:
+                status = '✅' if r['passed'] else '❌'
+                print(f'{status} **{r[\"gate_name\"]}**: Score={r.get(\"score\", \"N/A\")}')
+                for e in r.get('errors', []):
+                  print(f'  - ❌ {e}')
+                for w in r.get('warnings', []):
+                  print(f'  - ⚠️ {w}')
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+
+  version-tag:
+    if: github.ref == 'refs/heads/main'
+    needs: pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version tag
+        run: |
+          DATE_TAG="v$(date +'%Y.%m.%d')-${GITHUB_RUN_NUMBER}"
+          echo "tag=$DATE_TAG" >> $GITHUB_OUTPUT
+          git tag $DATE_TAG
+          git push origin $DATE_TAG || echo "Tag may already exist"

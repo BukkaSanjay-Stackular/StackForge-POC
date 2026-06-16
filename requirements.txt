@@ -1,0 +1,28 @@
+# Core
+markitdown[all]
+requests
+pyyaml
+
+# LLM & Structured Output
+tenacity==8.3.0
+tiktoken
+
+# Validation & Schemas
+pydantic==2.8.0
+pydantic-settings==2.3.0
+
+# Diagrams
+mermaid-cli
+plantuml
+
+# API & SQL Validation
+spectral-cli
+sqlfluff
+
+# CLI & UX
+typer==0.12.0
+rich==13.7.0
+loguru==0.7.2
+
+# Utilities
+python-dotenv==1.0.0

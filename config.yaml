@@ -1,0 +1,205 @@
+# SDLC Pipeline Configuration
+# All configurable values externalized from code
+
+# ─── PATHS ──────────────────────────────────────────────────────────────────────
+paths:
+  raw_docs: "raw_docs"
+  markdown_docs: "markdown_docs"
+  sub_docs: "sub_docs"
+  user_stories: "user_stories"
+  design_artifacts: "design_artifacts"
+  processed_log: "processed_files.txt"
+  content_hashes: ".content_hashes.json"
+
+# ─── LLM CONFIG ─────────────────────────────────────────────────────────────────
+llm:
+  primary:
+    provider: "opencode"
+    model: "opencode/deepseek-v4-flash-free"
+    timeout: 300
+  fallback:
+    provider: "opencode"
+    model: "opencode/deepseek-v4-flash-free"
+    timeout: 180
+  # For classification (cheaper/faster)
+  classifier:
+    provider: "opencode"
+    model: "opencode/deepseek-v4-flash-free"
+    timeout: 120
+  # For design generation (more capable)
+  designer:
+    provider: "opencode"
+    model: "opencode/deepseek-v4-flash-free"
+    timeout: 300
+
+# ─── CHUNKING ───────────────────────────────────────────────────────────────────
+chunking:
+  chunk_size_words: 600
+  min_chunk_words: 50
+  merge_tiny_chunks: true
+  split_on_headings: true
+  heading_levels: [1, 2]  # Split on H1, H2
+
+# ─── SDLC TOPICS ────────────────────────────────────────────────────────────────
+sdlc_topics:
+  - "requirements"
+  - "design"
+  - "technical"
+  - "timeline"
+  - "budget"
+  - "testing"
+  - "integrations"
+  - "team_and_process"
+
+# Topic descriptions for classification prompt (extend as needed)
+topic_descriptions:
+  requirements: |
+    - Functional requirements: what the system MUST do, SHOULD do, COULD do
+    - Feature lists with requirement IDs (e.g. APT-001, PAT-002, DOC-003)
+    - User stories and use cases
+    - Business objectives and success metrics
+    - Non-functional requirements: performance SLAs, availability, scalability
+    - Scope of work: IN scope and OUT of scope
+    - Acceptance criteria for features
+    - Open questions or pending decisions about features
+  design: |
+    - UI/UX design decisions: screen layouts, user flows, wireframes, mockups
+    - Mobile app design: native app vs PWA, Android/iOS design considerations
+    - Patient-facing interface design: booking screens, portal screens
+    - Doctor dashboard interface design
+    - Branding: colors, typography, logo usage
+    - Accessibility requirements
+    - Navigation structure and information architecture
+    - Form designs, button placements, interaction patterns
+  technical: |
+    - Technology stack: frontend framework, backend framework, programming language
+    - Database choices: PostgreSQL, Redis, MongoDB etc.
+    - Cloud infrastructure: AWS, Azure, GCP, server setup, hosting
+    - Mobile app technology: React Native, Flutter, Swift, Kotlin
+    - API design: REST, GraphQL, authentication method (JWT, OAuth)
+    - Security implementation: encryption, TLS, HTTPS, RBAC, MFA, OTP
+    - Compliance: HIPAA, DPDP Act, ABDM guidelines, data residency rules
+    - Performance architecture: caching, load balancing, horizontal scaling
+    - Data migration: ETL process, record counts, source format, migration steps
+    - File storage: S3, CDN, document management
+    - Audit logging, monitoring, error handling
+  timeline: |
+    - Project phases and their durations (Phase 1, Phase 2 etc.)
+    - Milestone dates and target delivery dates
+    - Go-live or launch date
+    - Sprint or iteration schedule
+    - Dependency timelines: client credentials, approvals, data
+    - Delays, timeline risks, and schedule change notices
+  budget: |
+    - Total project cost or engagement value (INR amounts, USD amounts)
+    - Payment schedule: advance payment, milestone payments, final payment
+    - Payment triggers: what event triggers each payment
+    - GST, taxes, or additional charges
+    - Change request cost implications
+    - Infrastructure cost estimates (monthly cloud costs)
+    - Commercial terms: fixed price, time and material, retainer
+  testing: |
+    - UAT (User Acceptance Testing): process, timeline, who does it
+    - Test plan, test cases, test scenarios
+    - QA process: unit testing, integration testing, regression testing
+    - Bug severity levels: critical, high, medium, low
+    - Sign-off process: who approves, how long they have
+    - Load testing and performance testing: tools, targets, thresholds
+    - Defect management: how bugs are tracked and resolved
+    - Phase completion certificates and milestone sign-off criteria
+    - Staging environment and production deployment validation
+  integrations: |
+    - Third-party system integrations: Medi-Plus EMR, Tally ERP, Razorpay, WhatsApp API
+    - Integration type: REST API, file-based, webhook, SDK
+    - Data flow between systems: what data goes where, sync frequency
+    - Authentication for integrations: API keys, credentials, tokens
+    - Payment gateway: Razorpay UPI, cards, wallets, refunds, webhooks
+    - WhatsApp Business API: Meta Cloud API, message templates, BSP providers
+    - EMR integration: read-only vs bidirectional, patient record format
+    - Billing system sync: invoice push, payment status polling
+    - Lab management system integration
+    - Fallback behaviour when integration is unavailable
+    - Pending credentials or API access from client
+  team_and_process: |
+    - Project team members and their roles (PM, designer, developer, QA)
+    - Client stakeholders and their responsibilities
+    - Client obligations: what the client must provide and by when
+    - Approval process: who approves deliverables, turnaround time
+    - Change request (CR) process: how scope changes are handled
+    - Communication plan: meeting cadence, reporting, escalation
+    - Governance: project owner, decision-making authority
+    - Assumptions made about client participation
+    - Vendor responsibilities and warranties
+    - Post-launch support terms: hypercare period, SLA, maintenance
+
+# ─── CLASSIFICATION ─────────────────────────────────────────────────────────────
+classification:
+  max_topics_per_chunk: 3
+  min_topics_per_chunk: 1
+  require_meaningful_match: true
+  skip_empty_chunks: true
+
+# ─── USER STORY GENERATION ──────────────────────────────────────────────────────
+user_stories:
+  max_epics: 6
+  min_epics: 4
+  features_per_epic: [2, 4]
+  stories_per_feature: [2, 3]
+  max_context_words: 1200
+  epic_context_words: 1500
+  priority_values: ["Must Have", "Should Have", "Could Have"]
+  story_point_values: [1, 2, 3, 5, 8]
+
+# ─── DESIGN ARTIFACTS ───────────────────────────────────────────────────────────
+design_artifacts:
+  generate:
+    architecture_diagram: true
+    openapi_spec: true
+    database_schema: true
+    ui_components: true
+    user_journeys: true
+    adrs: true
+  formats:
+    diagrams: ["mermaid", "plantuml"]
+    openapi_version: "3.1.0"
+    sql_dialect: "postgresql"
+  stitch_mcp:
+    enabled: true
+    api_key: ""  # Set via env var STITCH_API_KEY
+    model_id: "GEMINI_3_FLASH"
+
+# ─── QUALITY GATES ──────────────────────────────────────────────────────────────
+quality_gates:
+  enabled: true
+  requirements_completeness:
+    check_moscow_coverage: true
+    require_acceptance_criteria: true
+  design_coverage:
+    min_requirement_coverage: 0.8  # 80% of Must Have requirements mapped
+  api_validation:
+    spectral_lint: true
+  sql_validation:
+    sqlfluff_lint: true
+  cross_doc_consistency:
+    enabled: true
+    llm_judge_model: "opencode/deepseek-v4-flash-free"
+
+# ─── INCREMENTAL PROCESSING ─────────────────────────────────────────────────────
+incremental:
+  enabled: true
+  hash_algorithm: "sha256"
+  reclassify_on_change: true
+
+# ─── RETRY CONFIG ───────────────────────────────────────────────────────────────
+retry:
+  max_attempts: 3
+  base_delay: 2.0
+  max_delay: 60.0
+  exponential_base: 2
+  jitter: true
+
+# ─── LOGGING ────────────────────────────────────────────────────────────────────
+logging:
+  level: "INFO"
+  format: "rich"
+  token_usage_summary: true
