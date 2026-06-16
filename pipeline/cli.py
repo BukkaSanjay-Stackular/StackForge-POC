@@ -10,6 +10,7 @@ import typer
 from loguru import logger
 from rich.console import Console
 from rich.table import Table
+from dotenv import load_dotenv
 
 from pipeline.utils.config import load_config, get_config, get_path
 from pipeline.utils.hashing import ContentHasher
@@ -52,6 +53,7 @@ def main_callback(
     config_file: str = typer.Option("config.yaml", "--config", "-c", help="Path to configuration file"),
 ):
     """Load configuration on startup."""
+    load_dotenv()
     try:
         load_config(config_file)
         _setup_logging()
